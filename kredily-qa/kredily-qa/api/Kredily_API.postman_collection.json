@@ -1,0 +1,440 @@
+{
+  "info": {
+    "name": "Kredily HRMS API Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "SKELETON. Real endpoints are not publicly documented. Capture them from the APK (Postman proxy / Charles / mitmproxy / HTTP Toolkit), then replace baseUrl, the REPLACE_ME paths and the body fields. Test scripts are already written."
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://REPLACE_ME_api_host"
+    },
+    {
+      "key": "email",
+      "value": "peoplekredily1@yopmail.com"
+    },
+    {
+      "key": "password",
+      "value": "Pass@9865"
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Login API",
+      "item": [
+        {
+          "name": "Login - valid credentials (positive)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/REPLACE_ME/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "REPLACE_ME",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Responds in < 2s\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.test(\"Returns a token\", () => {",
+                  "  const j = pm.response.json();",
+                  "  const t = j.token || (j.data && j.data.token);",
+                  "  pm.expect(t, \"token field - adjust to real response\").to.be.ok;",
+                  "  pm.collectionVariables.set(\"token\", t);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login - wrong password (negative)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/REPLACE_ME/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "REPLACE_ME",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"WrongPass@123\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Rejected with 4xx\", () => pm.expect(pm.response.code).to.be.within(400, 422));",
+                  "pm.test(\"No token issued\", () => {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j.token || (j.data && j.data.token)).to.be.undefined;",
+                  "});",
+                  "pm.test(\"No stack trace leaked\", () => pm.expect(pm.response.text()).to.not.match(/Exception|at com\\.|SQL/i));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login - missing password (negative)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/REPLACE_ME/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "REPLACE_ME",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Rejected with 4xx\", () => pm.expect(pm.response.code).to.be.within(400, 422));",
+                  "pm.test(\"No token issued\", () => {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j.token || (j.data && j.data.token)).to.be.undefined;",
+                  "});",
+                  "pm.test(\"No stack trace leaked\", () => pm.expect(pm.response.text()).to.not.match(/Exception|at com\\.|SQL/i));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login - SQL injection email (negative)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/REPLACE_ME/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "REPLACE_ME",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"' OR '1'='1' --\",\n  \"password\": \"x\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Rejected with 4xx\", () => pm.expect(pm.response.code).to.be.within(400, 422));",
+                  "pm.test(\"No token issued\", () => {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j.token || (j.data && j.data.token)).to.be.undefined;",
+                  "});",
+                  "pm.test(\"No stack trace leaked\", () => pm.expect(pm.response.text()).to.not.match(/Exception|at com\\.|SQL/i));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Profile / Dashboard API",
+      "item": [
+        {
+          "name": "Profile - with token (positive)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/REPLACE_ME/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "REPLACE_ME",
+                "profile"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Valid JSON body\", () => pm.response.json());"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Profile - without token (negative)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/REPLACE_ME/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "REPLACE_ME",
+                "profile"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"401/403 without token\", () => pm.expect(pm.response.code).to.be.oneOf([401, 403]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Profile - tampered token (negative)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/REPLACE_ME/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "REPLACE_ME",
+                "profile"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"401/403 with tampered token\", () => pm.expect(pm.response.code).to.be.oneOf([401, 403]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Leave API",
+      "item": [
+        {
+          "name": "Leave balance - with token (positive)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/REPLACE_ME/leave/balance",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "REPLACE_ME",
+                "leave",
+                "balance"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Valid JSON body\", () => pm.response.json());"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Leave balance - without token (negative)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/REPLACE_ME/leave/balance",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "REPLACE_ME",
+                "leave",
+                "balance"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"401/403 without token\", () => pm.expect(pm.response.code).to.be.oneOf([401, 403]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Apply leave - end before start (negative)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/REPLACE_ME/leave/apply",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "REPLACE_ME",
+                "leave",
+                "apply"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"REPLACE_ME\",\n  \"from\": \"2026-12-10\",\n  \"to\": \"2026-12-01\",\n  \"reason\": \"QA test\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Rejected with 4xx\", () => pm.expect(pm.response.code).to.be.within(400, 422));",
+                  "pm.test(\"No token issued\", () => {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j.token || (j.data && j.data.token)).to.be.undefined;",
+                  "});",
+                  "pm.test(\"No stack trace leaked\", () => pm.expect(pm.response.text()).to.not.match(/Exception|at com\\.|SQL/i));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
